@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0d1117">
+    <title>Скрытый Сервер</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .wallet-box { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin: 20px 0; text-align: center; }
+        .wallet-title { color: #c9d1d9; font-size: 13px; margin-bottom: 8px; display: block; }
+        .wallet-address { color: #58a6ff; font-family: monospace; font-size: 13px; background: #0d1117; padding: 8px; border-radius: 4px; border: 1px dashed #30363d; display: block; word-wrap: break-word; }
+    </style>
+</head>
+<body>
+
+<a href="/profile" style="position: absolute; top: 15px; right: 15px; z-index: 100;">
+    <div class="user-profile">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+    </div>
+</a>
+
+<div class="container">
+    <h2>Оставить анонимное сообщение</h2>
+
+    <div class="info-box">
+        <span class="info-box-title">🔒 Полная анонимность изображений</span>
+        <span class="info-box-desc">Все загружаемые фотографии автоматически очищаются от метаданных.</span>
+    </div>
+
+    <div class="author-box">
+        <span class="author-box-title">ℹ️ Информация о проекте</span>
+        <p class="author-box-desc">Данный сервер работает локально на базе Termux.</p>
+        <div class="wallet-box">
+            <span class="wallet-title">Поддержать проект (BTC):</span>
+            <code class="wallet-address">bc1qth8s29dxqwlcsh5tu9uqzxvfny3laxdss9kgnz</code>
+        </div>
+    </div>
+
+    <div id="send-form" style="margin-top: 30px; padding: 20px; border: 1px solid #30363d; border-radius: 8px;">
+        <h3>Написать сообщение</h3>
+        <form action="/send" method="POST" enctype="multipart/form-data" class="form-group">
+            {% if session.get('user_id') %}
+                <div style="background: #161b22; padding: 10px; border: 1px solid #30363d; border-radius: 6px; color: #58a6ff; margin-bottom: 10px;">
+                    👤 Вы пишете как: <b>{{ session.get('username') }}</b>
+                </div>
+            {% else %}
+                <div style="background: #161b22; padding: 10px; border: 1px solid #30363d; border-radius: 6px; color: #8b949e; margin-bottom: 10px; font-size: 14px;">
+                    👤 Вы пишете как <b>Анон</b>. <a href="/profile" style="color: #58a6ff; text-decoration: none;">Войдите</a>.
+                </div>
+                <div class="captcha-block" style="margin-bottom: 10px;">
+                    <span>{{ num1 }} + {{ num2 }} = </span>
+                    <input type="number" name="captcha" required class="captcha-input" placeholder="?">
+                </div>
+            {% endif %}
+            
+            <textarea name="message" placeholder="Текст сообщения..." rows="4" style="width: 100%; box-sizing: border-box;"></textarea>
+            
+            <div style="margin-top: 10px;">
+                <label>Прикрепить фото:</label>
+                <input type="file" name="image" accept="image/*">
+            </div>
+            <button type="submit" class="btn-submit" style="margin-top: 15px; padding: 10px 20px; width: 100%; cursor: pointer;">Отправить</button>
+        </form>
+    </div>
+
+    <h3 id="wall">Стена сообщений</h3>
+    <div class="comments-wall">
+        {% if not main_comments %}
+            <p style="color: #8b949e; font-size: 14px;">Сообщений пока нет.</p>
+        {% endif %}
+
+        {% for row in main_comments %}
+            <div class="comment-group">
+                <div class="comment-card">
+                    <div class="comment-header">
+                        <span class="username">👤 {{ row[1] }}</span>
+                        <span>🕒 {{ row[3] }}</span>
+                    </div>
+                    <div class="comment-text">{{ row[2] }}</div>
+                    
+                    {% if row[4] %}
+                        <div class="tor-image-container">
+                            {% if not row[4].endswith('.gif') and not row[4].endswith('.webp') %}
+                                <input type="checkbox" id="img_{{ row[0] }}" class="fullscreen-toggle">
+                            {% endif %}
+                            
+                            <img src="/uploads/{{ row[4] }}" class="comment-img" alt="Изображение">
+                            
+                            {% if not row[4].endswith('.gif') and not row[4].endswith('.webp') %}
+                                <label for="img_{{ row[0] }}" class="fullscreen-btn">⛶</label>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if replies and replies[row[0]] %}
+                    {% for reply in replies[row[0]] %}
+                        <div class="comment-card admin-reply">
+                            <div class="comment-header">
+                                <span class="admin-username">💀 Админ</span>
+                                <span>🕒 {{ reply[3] }}</span>
+                            </div>
+                            <div class="comment-text">{{ reply[2] }}</div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="footer">© 2026 Скрытый Сервер. Powered by Termux & Flask.</div>
+</div>
+</body>
+</html>

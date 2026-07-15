@@ -1,0 +1,78 @@
+/* Основной контейнер */
+.profile-container {
+    max-width: 400px;
+    margin: 40px auto;
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    display: flex;
+    flex-direction: column; /* Элементы идут друг под другом */
+    align-items: center;    /* Центрирует всё по горизонтали */
+}
+
+/* Общий блок профиля */
+.author-box {
+    background: #161b22;
+    padding: 25px;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+/* Заголовки */
+h2 {
+    color: #c9d1d9;
+    margin-bottom: 20px;
+}
+
+/* Поля ввода - теперь одинаковые для всех */
+.text-input, .auth-input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    background: #161b22; /* Тот же цвет, что и у блока */
+    border: 1px solid #30363d;
+    color: #c9d1d9;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 16px;
+}
+
+/* Кнопки */
+.submit-btn, .auth-submit-btn {
+    width: 100%;
+    padding: 12px;
+    cursor: pointer;
+    background: #238636;
+    border: none;
+    color: white;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* Ссылки */
+.logout-link {
+    color: #f85149;
+    text-decoration: none;
+    display: block;
+    margin-top: 15px;
+}
+
+.back-link {
+    color: #58a6ff;
+    font-size: 14px;
+    text-decoration: none;
+    margin-top: 20px;
+    display: block;
+    /* Ссылка теперь по центру благодаря flex-контейнеру выше */
+}
+
+/* Адаптивность */
+@media (max-width: 480px) {
+    .profile-container {
+        margin: 20px auto;
+        padding: 10px;
+        width: 95%;
+    }
+}

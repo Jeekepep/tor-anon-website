@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0d1117">
+    <title>Личный кабинет</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='profile_style.css') }}">
+</head>
+<body>
+
+<div class="profile-container">
+    {% if 'user_id' in session %}
+        <h2>Личный кабинет</h2>
+        <div class="author-box">
+            <p>👤 Пользователь: <b>{{ session.get('username') }}</b></p>
+            
+            <form action="/update_username" method="POST" class="username-form">
+                <input type="text" name="new_username" class="text-input" placeholder="Новый ник" required>
+                <button type="submit" class="submit-btn">Изменить</button>
+            </form>
+            
+            <a href="/logout" class="logout-link">Выйти из профиля</a>
+        </div>
+    {% else %}
+        <h2>Вход или Регистрация</h2>
+        <div class="author-box">
+            <form action="/login" method="POST" class="auth-form">
+                <input type="text" name="username" class="auth-input" placeholder="Никнейм" required>
+                <input type="password" name="password" class="auth-input" placeholder="Пароль" required>
+                <button type="submit" class="auth-submit-btn">Войти / Зарегистрироваться</button>
+            </form>
+        </div>
+    {% endif %}
+
+    <br>
+    <a href="/" class="back-link">← Вернуться на главную</a>
+</div>
+
+</body>
+</html>

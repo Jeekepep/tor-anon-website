@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#161b22">
+    <title>Панель администратора</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin_style.css') }}">
+</head>
+<body>
+
+<div class="container">
+    {% if not password_correct %}
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0;">Вход в panel управления</h3>
+            <a href="/" style="color: #58a6ff; text-decoration: none; font-size: 14px; font-weight: bold;">← На главную</a>
+        </div>
+        <form method="POST">
+            <input type="password" name="password" placeholder="Введите пароль администратора">
+            <button type="submit">Войти</button>
+        </form>
+    {% else %}
+        {% set current_tab = session.get('admin_current_tab', 'active-tab') %}
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3 style="margin: 0;">Управление сервером данных</h3>
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <a href="/" style="color: #58a6ff; text-decoration: none; font-size: 14px; font-weight: bold;">← На главную</a>
+                <form action="/admin/clear_log" method="POST" onsubmit="return confirm('Вы уверены, что хотите полностью очистить лог ошибок?');" style="margin: 0; display: inline;">
+                    <button type="submit" style="background: none; border: none; color: #f85149; font-size: 14px; font-weight: bold; cursor: pointer; padding: 0; font-family: inherit;">Очистить лог</button>
+                </form>
+                <a href="/admin/logout" style="color: #f85149; text-decoration: none; font-size: 14px; font-weight: bold;">Выйти</a>
+            </div>
+        </div>
+
+        <div class="tabs" style="margin-top: 15px;">
+            <button id="btn-active-tab" class="tab-btn {% if current_tab == 'active-tab' %}active{% endif %}" onclick="openTab('active-tab', this)">Активные сообщения</button>
+            <button id="btn-deleted-tab" class="tab-btn {% if current_tab == 'deleted-tab' %}active{% endif %}" onclick="openTab('deleted-tab', this)">Удалённые / Корзина</button>
+        </div>
+
+        <div id="active-tab" class="tab-content {% if current_tab == 'active-tab' %}active{% endif %}">
+            <p id="no-active-text" style="color: #8b949e; {% if active_comments %}display: none;{% endif %}">Активных сообщений на сайте нет.</p>
+            {% for row in active_comments %}
+                <div class="comment-card" id="card-comment-{{ row[0] }}">
+                    <div class="comment-header">
+                        <span class="username">👤 {{ row[1] }} <small style="color: #8b949e;">{% if row[6] %}(ID: #{{ row[6] }}){% else %}(None){% endif %}</small></span>
+                        <span class="time-stamp">🕒 {{ row[3] }}</span>
+                    </div>
+                    <div class="comment-text" style="margin: 10px 0;">{{ row[2] }}</div>
+                    {% if row[4] %}
+                        <div class="img-wrapper"><img src="/uploads/{{ row[4] }}" class="comment-img"></div>
+                        <button class="exif-toggle-btn" onclick="toggleExif(this)">🔍 ПЕРЕХВАЧЕННЫЙ EXIF <span class="arrow-icon">▼</span></button>
+                        <div class="exif-content"><strong>Данные файла:</strong> {{ row[5] }}</div>
+                    {% endif %}
+                    
+                    <div class="reply-box">
+                        <form action="/admin/reply/{{ row[0] }}" method="POST" style="display: flex; gap: 10px; margin: 0;">
+                            <input type="text" name="reply_text" class="reply-input" placeholder="Написать ответ..." required style="margin: 0;">
+                            <button type="submit" class="btn-reply">Ответить</button>
+                        </form>
+                    </div> 
+                    
+                    <div class="action-buttons-container" style="margin-top: 15px;">
+                        <div class="action-buttons-row">
+                            <button type="button" class="btn-danger" style="margin: 0;" onclick="moveToTrash('{{ row[0] }}')">Убрать с сайта (В корзину)</button>
+                            <button type="button" class="btn-edit" onclick="toggleEditForm('{{ row[0] }}')">Изменить сообщение</button>
+                        </div>
+                    </div>
+                    <div id="edit-form-{{ row[0] }}" class="edit-comment-form-block" style="display: none;">
+                        <form action="/admin/edit/{{ row[0] }}" method="POST">
+                            <textarea name="edit_text" rows="3" class="edit-comment-textarea" required>{{ row[2] }}</textarea>
+                            <div style="display: flex; gap: 10px;">
+                                <button type="submit" class="btn-reply btn-save">Сохранить</button>
+                                <button type="button" class="btn-reply btn-cancel" onclick="toggleEditForm('{{ row[0] }}')">Отмена</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div id="deleted-tab" class="tab-content {% if current_tab == 'deleted-tab' %}active{% endif %}">
+            <div id="trash-header-wrap">
+                {% if deleted_comments %}
+                    <form id="clear-trash-form" action="/admin/clear_trash" method="POST" onsubmit="return confirm('Удалить всё навсегда?');" style="margin: 0 0 15px 0; width: 100%;">
+                        <button type="submit" style="width: 100%; background: #21262d; border: 1px solid #f85149; color: #f85149; font-size: 16px; cursor: pointer; padding: 6px 0; border-radius: 6px;">🗑️</button>
+                    </form>
+                {% endif %}
+            </div>
+            <p id="empty-trash-text" style="color: #8b949e; {% if deleted_comments %}display: none;{% endif %}">В корзине пусто.</p>
+            <div id="trash-list">
+                {% for row in deleted_comments %}
+                    <div class="comment-card" id="card-comment-{{ row[0] }}" style="opacity: 0.85;">
+                        <div class="comment-header">
+                            <span class="username">👤 {{ row[1] }} <small style="color: #8b949e;">{% if row[6] %}(ID: #{{ row[6] }}){% else %}(None){% endif %}</small></span>
+                            <span class="time-stamp">🕒 {{ row[3] }}</span>
+                        </div>
+                        <div class="comment-text" style="margin: 10px 0;">{{ row[2] }}</div>
+                        <div class="action-buttons-container" style="margin-top: 15px;">
+                            <div style="display: flex; gap: 10px;">
+                                <button type="button" class="btn-restore" onclick="restoreFromTrash('{{ row[0] }}')">Восстановить</button>
+                                <button type="button" class="btn-delete-permanent" onclick="permanentDelete('{{ row[0] }}')">🗑️ Удалить навсегда</button>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    function openTab(tabId, btn) {
+        var contents = document.getElementsByClassName('tab-content');
+        for (var i = 0; i < contents.length; i++) contents[i].classList.remove('active');
+        var buttons = document.getElementsByClassName('tab-btn');
+        for (var i = 0; i < buttons.length; i++) buttons[i].classList.remove('active');
+        document.getElementById(tabId).classList.add('active');
+        btn.classList.add('active');
+        fetch('/admin/set_tab', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tab: tabId }) });
+    }
+
+    function moveToTrash(commentId) {
+        fetch('/trash/' + commentId, { method: 'POST' }).then(() => {
+            var card = document.getElementById('card-comment-' + commentId);
+            if (card) {
+                card.style.transition = 'all 0.2s ease';
+                card.style.opacity = '0';
+                setTimeout(() => {
+                    // Убираем форму ответа и форму редактирования при отправке в корзину
+                    var replyBox = card.querySelector('.reply-box');
+                    if (replyBox) replyBox.remove();
+                    var editForm = card.querySelector('.edit-comment-form-block');
+                    if (editForm) editForm.remove();
+
+                    // Перемещаем карточку в список корзины
+                    var trashList = document.getElementById('trash-list');
+                    trashList.prepend(card);
+                    
+                    // Обновляем кнопки внутри карточки
+                    var btnContainer = card.querySelector('.action-buttons-container');
+                    if (btnContainer) {
+                        btnContainer.innerHTML = '<div style="display: flex; gap: 10px;"><button type="button" class="btn-restore" onclick="restoreFromTrash(\'' + commentId + '\')">Восстановить</button><button type="button" class="btn-delete-permanent" onclick="permanentDelete(\'' + commentId + '\')">🗑️ Удалить навсегда</button></div>';
+                    }
+                    
+                    card.style.opacity = '0.85';
+                    checkPlaceholders();
+                    showClearTrashBtn();
+                }, 200);
+            }
+        });
+    }
+
+    function restoreFromTrash(commentId) {
+        fetch('/restore/' + commentId, { method: 'POST' }).then(() => { location.reload(); });
+    }
+
+    function permanentDelete(commentId) {
+        if (!confirm('Удалить навсегда?')) return;
+        fetch('/delete/' + commentId, { method: 'POST' }).then(() => {
+            var card = document.getElementById('card-comment-' + commentId);
+            if (card) { card.remove(); checkPlaceholders(); }
+        });
+    }
+
+    function checkPlaceholders() {
+        var activeCards = document.getElementById('active-tab').querySelectorAll('.comment-card');
+        var noActiveText = document.getElementById('no-active-text');
+        if(noActiveText) noActiveText.style.display = activeCards.length === 0 ? 'block' : 'none';
+        var trashCards = document.getElementById('trash-list').querySelectorAll('.comment-card');
+        var emptyTrashText = document.getElementById('empty-trash-text');
+        if(emptyTrashText) emptyTrashText.style.display = trashCards.length === 0 ? 'block' : 'none';
+    }
+
+    function showClearTrashBtn() {
+        if (!document.getElementById('clear-trash-form')) {
+            var wrap = document.getElementById('trash-header-wrap');
+            if (wrap) wrap.innerHTML = '<form id="clear-trash-form" action="/admin/clear_trash" method="POST" onsubmit="return confirm(\'Очистить корзину?\');" style="margin: 0 0 15px 0; width: 100%;"><button type="submit" style="width: 100%; background: #21262d; border: 1px solid #f85149; color: #f85149; font-size: 16px; cursor: pointer; padding: 6px 0; border-radius: 6px;">🗑️</button></form>';
+        }
+    }
+
+    function toggleExif(button) {
+        button.classList.toggle('active');
+        var content = button.nextElementSibling;
+        if (content) content.style.display = (content.style.display === "block") ? "none" : "block";
+    }
+
+    function toggleEditForm(commentId) {
+        var form = document.getElementById('edit-form-' + commentId);
+        if (form) form.style.display = (form.style.display === 'none' || form.style.display === '') ? 'block' : 'none';
+    }
+</script>
+</body>
+</html>
