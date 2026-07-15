@@ -38,8 +38,8 @@ pkg install git python libjpeg-turbo
 ### 2. Клонирование и установка зависимостей
 Склонируйте репозиторий и установите библиотеки из `requirements.txt`:
 ```bash
-git clone https://github.com/ВАШ_НИКНЕЙМ/РЕПОЗИТОРИЙ.git
-cd РЕПОЗИТОРИЙ
+git clone https://github.com/Jeekepep/tor-anon-website.git
+cd tor-anon-website
 pip install -r requirements.txt
 ```
 
